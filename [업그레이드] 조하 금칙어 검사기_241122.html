@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>금칙어 검사기</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #result {
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+        .credit {
+            font-size: 10pt;
+            color: #666;
+            margin-left: 10px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .credit a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .credit a:hover {
+            text-decoration: underline;
+        }
+        .highlight {
+            color: red;
+            background-color: #ffebeb;
+        }
+    </style>
+</head>
+<body>
+    <h1>[조하] 블로그 금칙어 검사기</h1>
+    <div id="textContainer" contenteditable="true" style="border: 1px solid #ccc; min-height: 200px; padding: 10px; margin-bottom: 10px;" onpaste="handlePaste(event)"></div>
+    <button onclick="checkProhibitedWords()">금칙어 검사</button>
+    <span class="credit">Created by 조각하늘 (<a href="https://blog.naver.com/nollee" target="_blank">https://blog.naver.com/nollee</a>)</span>
+    <div id="result"></div>
+
+    <script>
+        const prohibitedWords = ["야합", "이보", "해보", "하더라", "총", "야할", "고아", "마약", "고자", "음부", "게이", "고환", "하네요"];
+
+        // 붙여넣기 이벤트 핸들러
+        function handlePaste(e) {
+            // 기본 붙여넣기 동작 방지
+            e.preventDefault();
+            
+            // 클립보드에서 텍스트만 가져오기
+            const text = e.clipboardData.getData('text/plain');
+            
+            // 텍스트를 현재 선택 위치에 삽입
+            document.execCommand('insertText', false, text);
+        }
+
+        function checkProhibitedWords() {
+            let textContainer = document.getElementById('textContainer');
+            let text = textContainer.innerText;
+            const counts = {};
+            
+            // 원본 텍스트를 HTML 엔티티로 변환하여 저장
+            let processedText = text;
+            
+            // 띄어쓰기를 제거한 텍스트로 검사
+            let noSpaceText = text.replace(/\s+/g, '');
+
+            prohibitedWords.forEach(word => {
+                // 띄어쓰기가 있을 수 있는 모든 위치에 선택적 공백을 허용하는 정규식 생성
+                const flexibleWord = word.split('').join('\\s*');
+                const regex = new RegExp(flexibleWord, 'g');
+                
+                // 원본 텍스트에서 매칭
+                const matches = text.match(regex);
+                if (matches) {
+                    counts[word] = matches.length;
+                    
+                    // 매칭된 부분(띄어쓰기 포함)을 하이라이트로 교체
+                    processedText = processedText.replace(regex, match => 
+                        `<span class="highlight">${match}</span>`
+                    );
+                }
+            });
+
+            // 결과 표시
+            displayResults(counts);
+            
+            // 하이라이트된 텍스트로 교체
+            textContainer.innerHTML = processedText;
+        }
+
+        function displayResults(counts) {
+            let resultText = '';
+            if (Object.keys(counts).length === 0) {
+                resultText = '금칙어가 발견되지 않았습니다.';
+            } else {
+                resultText = Object.entries(counts)
+                    .map(([word, count]) => `${word}(${count})`)
+                    .join(', ');
+            }
+            document.getElementById('result').textContent = resultText;
+        }
+    </script>
+</body>
+</html>
